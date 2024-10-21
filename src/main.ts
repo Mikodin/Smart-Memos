@@ -16,7 +16,7 @@ import {
 const { SmartChatModel } = require('smart-chat-model');
 
 import { SmartMemosAudioRecordModal } from './SmartMemosAudioRecordModal'; // Update with the correct path
-import { saveFile, readBinaryFile, createNewNote, insertLinkInEditor } from './Utils';
+import { saveFile, readBinaryFile, createNewNote, insertLinkInEditor, generateFileName } from './Utils';
 
 interface AudioPluginSettings {
   model: string;
@@ -170,7 +170,7 @@ export default class SmartMemosPlugin extends Plugin {
       this.audioFile = audioFile;
 
       // Save the audio recording as a .wav file
-      const fileName = `recording-${Date.now()}.wav`;
+      const fileName = generateFileName('recording', 'wav');
       const file = await saveFile(
         this.app,
         this.audioFile,
@@ -186,7 +186,7 @@ export default class SmartMemosPlugin extends Plugin {
       let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!activeView) {
         // Create a new note if no active view
-        const newFilePath = `${this.settings.recordingFilePath}/New Recording ${Date.now()}.md`;
+        const newFilePath = `${this.settings.recordingFilePath}/${generateFileName('New Recording', 'md')}`;
         activeView = await createNewNote(this.app, newFilePath);
       }
 
