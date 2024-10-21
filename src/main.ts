@@ -11,7 +11,6 @@ import {
   TAbstractFile,
   TFile,
   normalizePath,
-  requestUrl,
 } from 'obsidian';
 const { SmartChatModel } = require('smart-chat-model');
 
@@ -42,7 +41,7 @@ const DEFAULT_SETTINGS: AudioPluginSettings = {
   includeTranscript: true,
   recordingFilePath: '',
   keepAudio: true,
-  includeAudioFileLink: false,
+  includeAudioFileLink: true,
 };
 
 const MODELS: string[] = [
@@ -73,7 +72,7 @@ export default class SmartMemosPlugin extends Plugin {
   audioFile: Blob;
 
   async onload() {
-    console.log('hot reloadin');
+    console.log(`Reloaded - ${new Date().toString()}`);
     await this.loadSettings();
     const app_json = await this.app.vault.adapter.read('.obsidian/app.json');
     this.appJsonObj = JSON.parse(app_json);
