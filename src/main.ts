@@ -16,7 +16,7 @@ import {
 const { SmartChatModel } = require('smart-chat-model');
 
 import { SmartMemosAudioRecordModal } from './SmartMemosAudioRecordModal'; // Update with the correct path
-import { saveFile } from './Utils';
+import { saveFile, readBinaryFile, createNewNote, insertLinkInEditor } from './Utils';
 
 interface AudioPluginSettings {
   model: string;
@@ -187,22 +187,11 @@ export default class SmartMemosPlugin extends Plugin {
       if (!activeView) {
         // Create a new note if no active view
         const newFilePath = `${this.settings.recordingFilePath}/New Recording ${Date.now()}.md`;
-        const newFile = await this.app.vault.create(newFilePath, '');
-        activeView = await this.app.workspace.openLinkText(newFile.path, '', true);
+        activeView = await createNewNote(this.app, newFilePath);
       }
 
       if (activeView) {
-        const editor = activeView.editor;
-        const cursor = editor.getCursor();
-        const link = `![[${file.path}]]`;
-        editor.replaceRange(link, cursor);
-
-        // Trigger a change in the editor to force Obsidian to re-render the note
-        editor.replaceRange(
-          '',
-          { line: cursor.line, ch: cursor.ch },
-          { line: cursor.line, ch: cursor.ch },
-        );
+        insertLinkInEditor(activeView.editor, file.path);
       }
 
       // Transcribe the audio file if the transcribe parameter is true
@@ -224,7 +213,7 @@ export default class SmartMemosPlugin extends Plugin {
     }
 
     const editor = activeView.editor;
-    this.app.vault.readBinary(audioFile).then((audioBuffer) => {
+    readBinaryFile(this.app, audioFile.path).then((audioBuffer) => {
       if (this.writing) {
         new Notice('Generator is already in progress.');
         return;
@@ -282,7 +271,7 @@ export default class SmartMemosPlugin extends Plugin {
         } else {
           this.app.vault.adapter.exists(path).then((exists) => {
             if (!exists) throw new Error(path + ' does not exist');
-            this.app.vault.adapter.readBinary(path).then((audioBuffer) => {
+            readBinaryFile(this.app, path).then((audioBuffer) => {
               if (this.writing) {
                 new Notice('Generator is already in progress.');
                 return;

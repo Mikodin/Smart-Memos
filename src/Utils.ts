@@ -1,4 +1,4 @@
-import { type App, type TFile, TFolder, normalizePath } from "obsidian";
+import { type App, type TFile, TFolder, normalizePath, MarkdownView } from "obsidian";
 
 export async function saveFile(
 	app: App,
@@ -24,6 +24,24 @@ export async function saveFile(
 		console.error("Error saving audio file:", error);
 		throw error;
 	}
+}
+
+export async function readBinaryFile(app: App, path: string): Promise<ArrayBuffer> {
+	const fileExists = await app.vault.adapter.exists(path);
+	if (!fileExists) throw new Error(`${path} does not exist`);
+	return app.vault.adapter.readBinary(path);
+}
+
+export async function createNewNote(app: App, path: string): Promise<MarkdownView> {
+	const newFile = await app.vault.create(path, '');
+	return await app.workspace.openLinkText(newFile.path, '', true);
+}
+
+export function insertLinkInEditor(editor: Editor, filePath: string) {
+	const cursor = editor.getCursor();
+	const link = `![[${filePath}]]`;
+	editor.replaceRange(link, cursor);
+	editor.replaceRange('', { line: cursor.line, ch: cursor.ch }, { line: cursor.line, ch: cursor.ch });
 }
 
 async function ensureDirectoryExists(app: App, folderPath: string) {
