@@ -1,5 +1,5 @@
 {
-	"name": "smart-memos",
+	"name": "smart-memos-mod",
 	"version": "1.1.8",
 	"description": "Create personalized and intelligent analysis, summaries, and more for audio recordings that can be imported or spoken directly into a note",
 	"main": "main.js",

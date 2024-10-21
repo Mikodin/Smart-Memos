@@ -1,0 +1,7 @@
+.aider*
+node_modules/
+.python-version
+openAiApiKey
+build/
+.env
+data.json

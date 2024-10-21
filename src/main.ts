@@ -3,7 +3,7 @@ const {SmartChatModel} = require('smart-chat-model');
 
 
 import { SmartMemosAudioRecordModal } from './SmartMemosAudioRecordModal'; // Update with the correct path
-import { saveFile } from 'Utils';
+import { saveFile } from './Utils';
 
 interface AudioPluginSettings {
 	model: string;
@@ -57,6 +57,7 @@ export default class SmartMemosPlugin extends Plugin {
 	async onload() {
 
 		await this.loadSettings();
+        console.log('Loading hot reload!!!')
 
         const app_json = await this.app.vault.adapter.read(".obsidian/app.json");
         this.appJsonObj = JSON.parse(app_json);

@@ -2,10 +2,10 @@ import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
 import dotenv from "dotenv";
-dotenv.config();
 import fs from "fs";
 import path from "path";
 
+dotenv.config();
 
 const banner =
 `/*
@@ -19,6 +19,7 @@ const prod = (process.argv[2] === "production");
 const copy_to_plugins = {
 	name: 'copy_to_plugins',
 	setup(build) {
+		if(process.env.OBSIDIAN_PLUGINS_PATH) {
 		build.onEnd(() => {
 			const plugin_path = path.join(process.env.OBSIDIAN_PLUGINS_PATH, "smart-memos");
 			
@@ -26,21 +27,32 @@ const copy_to_plugins = {
 				fs.mkdirSync(plugin_path);
 			}
 			
-			fs.copyFileSync("./main.js", path.join(plugin_path, "main.js"));
+			fs.copyFileSync("./build/main.js", path.join(plugin_path, "main.js"));
 			fs.copyFileSync("./manifest.json", path.join(plugin_path, "manifest.json"));
-			fs.copyFileSync("./styles.css", path.join(plugin_path, "styles.css"));
+			fs.copyFileSync("./src/styles.css", path.join(plugin_path, "styles.css"));
 			// add empty .hotreload file
 			fs.writeFileSync(path.join(plugin_path, ".hotreload"), "");
 			
 			console.log("Plugin built and copied to obsidian plugins folder");
 		});
+		}
+
+		if(!process.env.OBSIDIAN_PLUGINS_PATH) {
+		build.onEnd(() => {
+			
+			fs.copyFileSync("./manifest.json", "build/manifest.json");
+			fs.copyFileSync("./src/styles.css", "build/styles.css");
+			
+			console.log("Plugin built and copied to build folder");
+		});
+		}
 	}
 };
 const context = await esbuild.context({
 	banner: {
 		js: banner,
 	},
-	entryPoints: ["main.ts"],
+	entryPoints: ["./src/main.ts"],
 	bundle: true,
 	external: [
 		"obsidian",
@@ -63,7 +75,7 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: "inline",
 	treeShaking: true,
-	outfile: "main.js",
+	outfile: "build/main.js",
 	plugins: [
 		copy_to_plugins
 	]
