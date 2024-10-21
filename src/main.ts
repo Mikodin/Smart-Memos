@@ -16,7 +16,13 @@ import {
 const { SmartChatModel } = require('smart-chat-model');
 
 import { SmartMemosAudioRecordModal } from './SmartMemosAudioRecordModal'; // Update with the correct path
-import { saveFile, readBinaryFile, createNewNote, insertLinkInEditor, generateFileName } from './Utils';
+import {
+  saveFile,
+  readBinaryFile,
+  createNewNote,
+  insertLinkInEditor,
+  generateFileName,
+} from './Utils';
 
 interface AudioPluginSettings {
   model: string;
@@ -67,6 +73,7 @@ export default class SmartMemosPlugin extends Plugin {
   audioFile: Blob;
 
   async onload() {
+    console.log('hot reloadin');
     await this.loadSettings();
     const app_json = await this.app.vault.adapter.read('.obsidian/app.json');
     this.appJsonObj = JSON.parse(app_json);
@@ -186,8 +193,10 @@ export default class SmartMemosPlugin extends Plugin {
       let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!activeView) {
         // Create a new note if no active view
-        const newFilePath = `${this.settings.recordingFilePath}/${generateFileName('New Recording', 'md')}`;
-        activeView = await createNewNote(this.app, newFilePath);
+        const newFilePath = `${this.settings.recordingFilePath}/${generateFileName('transcript', 'md')}`;
+        const newFile = await createNewNote(this.app, newFilePath);
+        await this.app.workspace.openLinkText(newFile.path, '', true);
+        activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
       }
 
       if (activeView) {
@@ -321,14 +330,17 @@ export default class SmartMemosPlugin extends Plugin {
     console.log('full path: ', fullPath);
 
     // Check if the file exists at the constructed path
-    const fileExists = this.app.vault.getAbstractFileByPath(fullPath) instanceof TAbstractFile;
+    const fileExists =
+      this.app.vault.getAbstractFileByPath(fullPath) instanceof TAbstractFile;
     if (fileExists) {
       return fullPath;
     }
 
     // If not found, search through all files in the vault
     const allFiles = await this.app.vault.getFiles();
-    const foundFile = allFiles.find((file) => file.name === filename.split('/').pop());
+    const foundFile = allFiles.find(
+      (file) => file.name === filename.split('/').pop(),
+    );
     if (foundFile) {
       return foundFile.path;
     }
