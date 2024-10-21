@@ -29,7 +29,7 @@ export async function saveFile(
 export async function readBinaryFile(app: App, path: string): Promise<ArrayBuffer> {
 	const fileExists = await app.vault.adapter.exists(path);
 	if (!fileExists) throw new Error(`${path} does not exist`);
-	return app.vault.adapter.readBinary(path);
+	return await app.vault.adapter.readBinary(path);
 }
 
 export async function createNewNote(app: App, path: string): Promise<MarkdownView> {

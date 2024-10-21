@@ -256,55 +256,49 @@ export default class SmartMemosPlugin extends Plugin {
     return newLine;
   }
 
-  commandGenerateTranscript(editor: Editor) {
+  async commandGenerateTranscript(editor: Editor) {
     const position = editor.getCursor();
     const text = editor.getRange({ line: 0, ch: 0 }, position);
     const regex = [
       /(?<=\[\[)(([^[\]])+)\.(mp3|mp4|mpeg|mpga|m4a|wav|webm)(?=]])/g,
       /(?<=\[(.*)]\()(([^[\]])+)\.(mp3|mp4|mpeg|mpga|m4a|wav|webm)(?=\))/g,
     ];
-    this.findFilePath(text, regex)
-      .then((path) => {
-        const fileType = path.split('.').pop();
-        if (fileType === undefined || fileType == null || fileType === '') {
-          new Notice('No audio file found');
-        } else {
-          this.app.vault.adapter.exists(path).then((exists) => {
-            if (!exists) throw new Error(path + ' does not exist');
-            readBinaryFile(this.app, path).then((audioBuffer) => {
-              if (this.writing) {
-                new Notice('Generator is already in progress.');
-                return;
-              }
-              this.writing = true;
-              new Notice('Generating transcript...');
-              this.generateTranscript(audioBuffer, fileType)
-                .then((result) => {
-                  this.transcript = result;
-                  const prompt = this.settings.prompt + result;
-                  new Notice('Transcript generated...');
-                  this.generateText(
-                    prompt,
-                    editor,
-                    editor.getCursor('to').line,
-                  );
-                })
-                .catch((error) => {
-                  console.warn(error.message);
-                  new Notice(error.message);
-                  this.writing = false;
-                });
-            });
-          });
-        }
-      })
-      .catch((error) => {
+    try {
+      const path = await this.findFilePath(text, regex);
+      const fileType = path.split('.').pop();
+      if (!fileType) {
+        new Notice('No audio file found');
+        return;
+      }
+
+      const exists = await this.app.vault.adapter.exists(path);
+      if (!exists) throw new Error(path + ' does not exist');
+
+      const audioBuffer = await readBinaryFile(this.app, path);
+      if (this.writing) {
+        new Notice('Generator is already in progress.');
+        return;
+      }
+      this.writing = true;
+      new Notice('Generating transcript...');
+      try {
+        const result = await this.generateTranscript(audioBuffer, fileType);
+        this.transcript = result;
+        const prompt = this.settings.prompt + result;
+        new Notice('Transcript generated...');
+        this.generateText(prompt, editor, editor.getCursor('to').line);
+      } catch (error) {
         console.warn(error.message);
         new Notice(error.message);
-      });
+        this.writing = false;
+      }
+    } catch (error) {
+      console.warn(error.message);
+      new Notice(error.message);
+    }
   }
 
-  async findFilePath(text: string, regex: RegExp[]) {
+  async findFilePath(text: string, regex: RegExp[]): Promise<string> {
     console.log('dir text: ', text);
 
     let filename = '';
@@ -327,16 +321,17 @@ export default class SmartMemosPlugin extends Plugin {
     console.log('full path: ', fullPath);
 
     // Check if the file exists at the constructed path
-    const fileExists =
-      this.app.vault.getAbstractFileByPath(fullPath) instanceof TAbstractFile;
-    if (fileExists) return fullPath;
+    const fileExists = this.app.vault.getAbstractFileByPath(fullPath) instanceof TAbstractFile;
+    if (fileExists) {
+      return fullPath;
+    }
 
     // If not found, search through all files in the vault
-    const allFiles = this.app.vault.getFiles();
-    const foundFile = allFiles.find(
-      (file) => file.name === filename.split('/').pop(),
-    );
-    if (foundFile) return foundFile.path;
+    const allFiles = await this.app.vault.getFiles();
+    const foundFile = allFiles.find((file) => file.name === filename.split('/').pop());
+    if (foundFile) {
+      return foundFile.path;
+    }
 
     throw new Error('File not found');
   }
