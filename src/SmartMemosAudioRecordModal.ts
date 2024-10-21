@@ -288,18 +288,18 @@ export class SmartMemosAudioRecordModal extends Modal {
 		this.redDot.classList.remove("smart-memo-pulse-animation"); // Ensure it's removed on reset
 	}
 
-	stopRecording() {
-		return new Promise<Blob | null>((resolve, reject) => {
-			this.resolve = resolve;
-			this.reject = reject;
-			if (this.mediaRecorder) {
-				this.mediaRecorder.addEventListener("stop", this.onStop.bind(this));
-				this.mediaRecorder.stop();
-				this.stopTimer();
-			} else {
-				resolve(null);
-			}
-		});
+	async stopRecording(): Promise<Blob | null> {
+		if (this.mediaRecorder) {
+			this.mediaRecorder.addEventListener("stop", this.onStop.bind(this));
+			this.mediaRecorder.stop();
+			this.stopTimer();
+			return new Promise<Blob | null>((resolve, reject) => {
+				this.resolve = resolve;
+				this.reject = reject;
+			});
+		} else {
+			return null;
+		}
 	}
 
 	startTimer() {

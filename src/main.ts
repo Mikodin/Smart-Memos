@@ -186,7 +186,7 @@ export default class SmartMemosPlugin extends Plugin {
 
       this.settings.keepAudio = keepAudio;
       this.settings.includeAudioFileLink = includeAudioFileLink;
-      this.saveSettings();
+      await this.saveSettings();
 
       // Insert a link to the audio file in the current note or create a new note if none is open
       let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -204,7 +204,7 @@ export default class SmartMemosPlugin extends Plugin {
 
       // Transcribe the audio file if the transcribe parameter is true
       if (transcribe) {
-        this.transcribeRecording(file);
+        await this.transcribeRecording(file);
       }
     } catch (error) {
       console.error('Error handling audio recording:', error);
