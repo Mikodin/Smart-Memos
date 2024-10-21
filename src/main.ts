@@ -182,23 +182,27 @@ export default class SmartMemosPlugin extends Plugin {
       this.settings.includeAudioFileLink = includeAudioFileLink;
       this.saveSettings();
 
-      // Only save the audio file if use wants to include it and they are keeping the audio
-      if (includeAudioFileLink && keepAudio) {
-        // Insert a link to the audio file in the current note
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView) {
-          const editor = activeView.editor;
-          const cursor = editor.getCursor();
-          const link = `![[${file.path}]]`;
-          editor.replaceRange(link, cursor);
+      // Insert a link to the audio file in the current note or create a new note if none is open
+      let activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (!activeView) {
+        // Create a new note if no active view
+        const newFilePath = `${this.settings.recordingFilePath}/New Recording ${Date.now()}.md`;
+        const newFile = await this.app.vault.create(newFilePath, '');
+        activeView = await this.app.workspace.openLinkText(newFile.path, '', true);
+      }
 
-          // Trigger a change in the editor to force Obsidian to re-render the note
-          editor.replaceRange(
-            '',
-            { line: cursor.line, ch: cursor.ch },
-            { line: cursor.line, ch: cursor.ch },
-          );
-        }
+      if (activeView) {
+        const editor = activeView.editor;
+        const cursor = editor.getCursor();
+        const link = `![[${file.path}]]`;
+        editor.replaceRange(link, cursor);
+
+        // Trigger a change in the editor to force Obsidian to re-render the note
+        editor.replaceRange(
+          '',
+          { line: cursor.line, ch: cursor.ch },
+          { line: cursor.line, ch: cursor.ch },
+        );
       }
 
       // Transcribe the audio file if the transcribe parameter is true
